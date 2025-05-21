@@ -134,6 +134,9 @@ media
 */migrations/*
 
 
+# ide
+.idea
+
 # Environments
 .env
 .venv
