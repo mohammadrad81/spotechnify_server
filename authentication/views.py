@@ -77,24 +77,25 @@ class SignUpView(views.APIView):
         serializer = UserSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        verification = Verification.get_or_create_for_user(user=user)
-        subject = "Spotechnify Email Verification"
-        message = f"""
-Dear user
-Welcome to Spotechnify
-{user.username}
-Verification Code:
-{verification.code}
-"""
-        recipient_list = [serializer.validated_data['email']]
-        try:
-            send_mail(subject, message, EMAIL_HOST_USER, recipient_list)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         verification = Verification.get_or_create_for_user(user=user)
+#         subject = "Spotechnify Email Verification"
+#         message = f"""
+# Dear user
+# Welcome to Spotechnify
+# {user.username}
+# Verification Code:
+# {verification.code}
+# """
+#         recipient_list = [serializer.validated_data['email']]
+#         try:
+#             send_mail(subject, message, EMAIL_HOST_USER, recipient_list)
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         token = get_jwt_token(user=user)
         serializer = UserSerializer(instance=user, context={"request": request})
         data = {
-            "message": "Verification Code Sent",
+            # "message": "Verification Code Sent",
+            "message": "Signed Up",
             "refresh": str(token),
             "access": str(token.access_token),
             "user": serializer.data

@@ -130,6 +130,9 @@ celerybeat.pid
 # saved media
 media
 
+# saved songs
+songs
+
 # migrations
 */migrations/*
 
