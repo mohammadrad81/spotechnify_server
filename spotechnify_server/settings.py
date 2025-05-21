@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     
     'rest_framework_simplejwt',
     'rest_framework',
+    'storages',
 
     'authentication',
     'music',
@@ -152,9 +153,17 @@ WSGI_APPLICATION = 'spotechnify_server.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT")  # Usually 5432
     }
 }
 
@@ -199,3 +208,26 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# AWS S3 Settings for Liara
+AWS_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('LIARA_ENDPOINT_URL')
+AWS_S3_REGION_NAME = 'us-east-1'
+
+print(AWS_ACCESS_KEY_ID)
+print(AWS_SECRET_ACCESS_KEY)
+print(AWS_STORAGE_BUCKET_NAME)
+print(AWS_S3_ENDPOINT_URL)
+
+
+# Django-storages configuration
+STORAGES = {
+  "default": {
+      "BACKEND": "storages.backends.s3.S3Storage",
+  },
+  "staticfiles": {
+      "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+  },
+}
