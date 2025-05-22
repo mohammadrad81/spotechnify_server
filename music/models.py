@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Exists, OuterRef
 from authentication.models import CustomUser
 from django.db.models import QuerySet
 from django.db.models import Count, Q, Subquery, OuterRef
@@ -13,13 +14,23 @@ class Song(models.Model):
     genre = models.CharField(max_length=128)
 
     @staticmethod
+    def annotate_by_like(user: CustomUser, queryset: QuerySet=None)-> QuerySet:
+        if not queryset:
+            queryset = Song.objects.all()
+        liked_subquery = Like.objects.filter(user=user, song=OuterRef('pk'))
+        annotated_by_like = queryset.annotate(liked=Exists(liked_subquery))
+        return annotated_by_like
+
+
+
+    @staticmethod
     def get_liked_by_user(user: CustomUser)-> QuerySet:
-        return Song.objects.filter(like__user=user)
+        return Song.annotate_by_like(user).filter(like__user=user)
 
     @staticmethod
     def get_recommended_for_user(user: CustomUser)-> QuerySet:
         liked_genres = Song.objects.filter(like__user=user).values_list('genre', flat=True).distinct()
-        recommendation = Song.objects\
+        recommendation = Song.annotate_by_like(user)\
             .exclude(like__user=user)\
             .filter(genre__in=liked_genres)\
             .annotate(genre_likes=Count('like'))\
@@ -27,13 +38,13 @@ class Song(models.Model):
         return recommendation
 
     @staticmethod
-    def search(query: str)-> QuerySet:
+    def search(user: CustomUser, query: str)-> QuerySet:
         query_words = query.split()
         q_objects = Q()
         for word in query_words:
             q_objects |= Q(title__icontains=word)
             q_objects |= Q(artist_name__icontains=word)
-        similar_songs = Song.objects.filter(q_objects).distinct()
+        similar_songs = Song.annotate_by_like(user).filter(q_objects).distinct()
         return similar_songs
 
 

@@ -12,7 +12,7 @@ class SongListAPIView(generics.ListAPIView):
     serializer_class = SongSerializer
 
     def get_queryset(self):
-        return Song.objects.all()
+        return Song.annotate_by_like(self.request.user)
 
 class LikedListAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -37,8 +37,9 @@ class SearchSongListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         request: Request = self.request
+        user = self.request.user
         query = request.GET.get('q', '').strip()
-        search_result = Song.search(query)
+        search_result = Song.search(user, query)
         return search_result
 
 class LikeSongAPIView(views.APIView):
