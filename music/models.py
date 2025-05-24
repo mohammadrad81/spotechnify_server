@@ -3,6 +3,7 @@ from django.db.models import Exists, OuterRef
 from authentication.models import CustomUser
 from django.db.models import QuerySet
 from django.db.models import Count, Q, Subquery, OuterRef
+from django.db.models import Count, OuterRef, Subquery, IntegerField, Q
 
 # Create your models here.
 
@@ -29,12 +30,20 @@ class Song(models.Model):
 
     @staticmethod
     def get_recommended_for_user(user: CustomUser)-> QuerySet:
-        liked_genres = Song.objects.filter(like__user=user).values_list('genre', flat=True).distinct()
-        recommendation = Song.annotate_by_like(user)\
-            .exclude(like__user=user)\
-            .filter(genre__in=liked_genres)\
-            .annotate(genre_likes=Count('like'))\
-            .order_by('-genre_likes')
+
+        # Step 1: Get genres the user has liked
+        liked_genres = Song.objects.filter(like__user=user).values('genre').distinct()
+        # Step 2: Subquery to count likes per genre
+        genre_like_counts = Like.objects.filter(song__genre=OuterRef('genre'))\
+            .values('song__genre')\
+            .annotate(genre_likes=Count('id'))\
+            .values('genre_likes')
+        # Step 3: Filter songs not liked by the user, with liked genres, and annotate
+        recommendation = Song.objects.filter(
+            genre__in=Subquery(liked_genres.values('genre'))).exclude(
+            like__user=user
+        ).annotate(genre_likes=Subquery(genre_like_counts, output_field=IntegerField()))\
+        .order_by('-genre_likes', '-id')  # sort by genre like count (ascending), then id as tie-breaker
         return recommendation
 
     @staticmethod
